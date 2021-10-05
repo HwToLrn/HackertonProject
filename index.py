@@ -186,7 +186,7 @@ def main():
                             current_set = 0
                             current_route += 1
 
-                    cv2.putText(img=image, text=str(int(left_angle)), org=(1000, 25),
+                    cv2.putText(img=image, text=str(int(left_angle)), org=(1000, 100),
                                 # tuple(np.multiply(coor_elbow, [image.shape[0], image.shape[1]]).astype(int))
                                 fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=BLUE_COLOR, thickness=2,
                                 lineType=cv2.LINE_AA)
