@@ -102,12 +102,11 @@ def customized_draw_landmarks(image: np.ndarray,
 
 # coor == coordinates: 좌표
 def calculate_angle(coor_fst: List[float], coor_scd: List[float], coor_trd: List[float]) -> float:
-    shoulder = np.array(coor_fst)
-    elbow = np.array(coor_scd)
-    wrist = np.array(coor_trd)
+    coor_fst = np.array(coor_fst)
+    coor_scd = np.array(coor_scd)
+    coor_trd = np.array(coor_trd)
 
-    radius = np.arctan2(wrist[1] - elbow[1], wrist[0] - elbow[0]) - np.arctan2(shoulder[1] - elbow[1],
-                                                                               shoulder[0] - elbow[0])
+    radius = np.arctan2(coor_trd[1] - coor_scd[1], coor_trd[0] - coor_scd[0]) - np.arctan2(coor_fst[1] - coor_scd[1], coor_fst[0] - coor_scd[0])
     angle = np.abs(radius * 180 / np.pi)
 
     if angle > 180.0:
@@ -119,8 +118,6 @@ def main():
     mp_drawing = mp.solutions.drawing_utils
     mp_pose = mp.solutions.pose
 
-    video = cv2.VideoCapture(0)
-
     # count variables
     left_counter: int = 0
     right_counter: int = 0
@@ -128,15 +125,27 @@ def main():
     stage: str = ''  # down or up
 
     # 사용자가 미리 정해 놓은 루틴 / 한 운동의 반복횟수 / 한 운동의 세트횟수
-    ROUTE: List[str] = ['팔굽혀펴기', '스쿼트', '아령들기']
+    ROUTE: List[str] = ['아령들기', '스쿼트', '팔굽혀펴기']
     REPEATS: int = 5
     SET: int = 2
     current_route: int = 0  # ROUTE[0] .. ROUTE[2] 순으로 사용
     current_set: int = 0
 
+    video = cv2.VideoCapture(0)
+
+    video_width = int(video.get(3))
+    video_height = int(video.get(4))
+
+    fourcc = cv2.VideoWriter_fourcc(*'DIVX')  # 코덱 정보
+    # 비디오 저장을 위한 객체를 생성
+    output = cv2.VideoWriter(filename='SavedVideo/SavedVideo1.avi',
+                             fourcc=fourcc, fps=20.0,
+                             frameSize=(video_width, video_height))
+
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         while video.isOpened():
             checkframe, frame = video.read()
+            frame = cv2.flip(src=frame, flipCode=1) # 좌우 또는 상하 반전
 
             # Recolor 'frame' to RGB
             image = cv2.cvtColor(src=frame, code=cv2.COLOR_BGR2RGB)
@@ -179,17 +188,15 @@ def main():
                     if left_angle <= 100 and right_angle <= 100:
                         stage = 'DOWN'
 
-                    if counter == REPEATS:  # 15회
+                    if counter == REPEATS:
                         current_set += 1
                         counter = 0
-                        if current_set == SET:  # 3세트면 다음 운동 / 혹은 종료(구현 필요)
+                        if current_set == SET:  # 다음 운동 / 혹은 종료(구현 필요)
                             current_set = 0
                             current_route += 1
 
-                    cv2.putText(img=image, text=str(int(left_angle)), org=(1000, 100),
-                                # tuple(np.multiply(coor_elbow, [image.shape[0], image.shape[1]]).astype(int))
-                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=BLUE_COLOR, thickness=2,
-                                lineType=cv2.LINE_AA)
+                    cv2.putText(img=image, text=str(int(left_angle)), org=(1000, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                                fontScale=3, color=BLUE_COLOR, thickness=2, lineType=cv2.LINE_AA)
                 elif ROUTE[current_route] == '아령들기':
                     # 어깨, 팔꿈치, 손목
                     coor_left_shoulder: List[float] = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x,
@@ -225,10 +232,10 @@ def main():
                         counter += 1
                         left_counter = 0
                         right_counter = 0
-                        if counter == REPEATS:  # 15회
+                        if counter == REPEATS:
                             current_set += 1
                             counter = 0
-                            if current_set == SET:  # 3세트면 다음 운동 / 혹은 종료(구현 필요)
+                            if current_set == SET:  # 다음 운동 / 혹은 종료(구현 필요)
                                 current_set = 0
                                 current_route += 1
                 elif ROUTE[current_route] == '스쿼트':
@@ -249,24 +256,21 @@ def main():
                     left_angle: float = calculate_angle(coor_left_hip, coor_left_knee, coor_left_ankle)
                     right_angle: float = calculate_angle(coor_right_hip, coor_right_knee, coor_right_ankle)
 
-                    # 정면에서 보면 다리 각도가 잘 보이는지 확인하기
                     if left_angle >= 170 and right_angle >= 170 and stage == 'DOWN':
                         stage = 'UP'
                         counter += 1
                     if left_angle <= 120 and right_angle <= 120:
                         stage = 'DOWN'
 
-                    if counter == REPEATS:  # 15회
+                    if counter == REPEATS:
                         current_set += 1
                         counter = 0
-                        if current_set == SET:  # 3세트면 다음 운동 / 혹은 종료(구현 필요)
+                        if current_set == SET:  # 다음 운동 / 혹은 종료(구현 필요)
                             current_set = 0
                             current_route += 1
 
-                    cv2.putText(img=image, text=str(int(left_angle)), org=(1000, 100),
-                                # tuple(np.multiply(coor_elbow, [image.shape[0], image.shape[1]]).astype(int))
-                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=BLUE_COLOR, thickness=2,
-                                lineType=cv2.LINE_AA)
+                    cv2.putText(img=image, text=str(int(left_angle)), org=(1000, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                                fontScale=3, color=BLUE_COLOR, thickness=2, lineType=cv2.LINE_AA)
                 elif ROUTE[current_route] == 'something_1':
                     pass
                 elif ROUTE[current_route] == 'something_2':
@@ -276,7 +280,7 @@ def main():
 
                 # Render curl counter
                 # Setup status box
-                cv2.rectangle(img=image, pt1=(0, 0), pt2=(400, 70), color=(245, 117, 16), thickness=-1)  # 280
+                cv2.rectangle(img=image, pt1=(0, 0), pt2=(400, 70), color=(245, 117, 16), thickness=-1)
 
                 # Repeat data
                 cv2.putText(img=image, text='REPS', org=(11, 12), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
@@ -304,12 +308,14 @@ def main():
 
             if checkframe:
                 cv2.imshow(winname='MyWindow', mat=image)
+                output.write(image=image)
 
             # ESC key for closing the window
             if cv2.waitKey(1) & 0xFF == 27:
                 break
 
     video.release()
+    output.release()
     cv2.destroyAllWindows()
 
 
