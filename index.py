@@ -133,19 +133,10 @@ def main():
 
     video = cv2.VideoCapture(0)
 
-    video_width = int(video.get(3))
-    video_height = int(video.get(4))
-
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')  # 코덱 정보
-    # 비디오 저장을 위한 객체를 생성
-    output = cv2.VideoWriter(filename='SavedVideo/SavedVideo1.avi',
-                             fourcc=fourcc, fps=20.0,
-                             frameSize=(video_width, video_height))
-
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         while video.isOpened():
             checkframe, frame = video.read()
-            frame = cv2.flip(src=frame, flipCode=1) # 좌우 또는 상하 반전
+            frame = cv2.flip(src=frame, flipCode=1) # 좌우(1) 또는 상하(0) 반전
 
             # Recolor 'frame' to RGB
             image = cv2.cvtColor(src=frame, code=cv2.COLOR_BGR2RGB)
@@ -275,7 +266,6 @@ def main():
                     pass
                 elif ROUTE[current_route] == 'something_2':
                     pass
-
                 # ------------------------------------------------------------------------
 
                 # Render curl counter
@@ -297,6 +287,11 @@ def main():
                             fontScale=0.5, color=(0, 0, 0), thickness=1, lineType=cv2.LINE_AA)
                 cv2.putText(img=image, text=str(current_set), org=(290, 60), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                             fontScale=2, color=(255, 255, 255), thickness=2, lineType=cv2.LINE_AA)
+                # Exercise data
+                # cv2.putText(img=image, text='Exercise', org=(290, 12), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                #             fontScale=0.5, color=(0, 0, 0), thickness=1, lineType=cv2.LINE_AA)
+                # cv2.putText(img=image, text=ROUTE[current_route], org=(290, 60), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                #             fontScale=2, color=(255, 255, 255), thickness=2, lineType=cv2.LINE_AA)
             except:
                 pass
 
@@ -308,14 +303,16 @@ def main():
 
             if checkframe:
                 cv2.imshow(winname='MyWindow', mat=image)
-                output.write(image=image)
 
+            key = cv2.waitKey(1)
             # ESC key for closing the window
-            if cv2.waitKey(1) & 0xFF == 27:
+            if key & 0xFF == 27:
                 break
+            elif key == ord('p'):
+                # wait until any key is pressed
+                cv2.waitKey(-1)
 
     video.release()
-    output.release()
     cv2.destroyAllWindows()
 
 

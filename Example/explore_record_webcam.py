@@ -4,7 +4,7 @@ import cv2
 def main():
     capture = cv2.VideoCapture(0)
 
-    OUTPUT_FILENAME = '../SavedVideo/SavedVideo.avi'
+    OUTPUT_FILENAME = '../SavedVideo/Video.avi'
     width = int(capture.get(3))
     height = int(capture.get(4))
 
@@ -20,7 +20,7 @@ def main():
         existframe, frame = capture.read()
 
         if existframe:
-            # 세로(vertical) 기준 : 0 / 가로(horizontal) 기준 : 1
+            # 세로(vertical)[상하] 기준 : 0 / 가로(horizontal)[좌우] 기준 : 1
             frame = cv2.flip(src=frame, flipCode=1)
             cv2.imshow(winname='MyWindow', mat=frame)
             output.write(image=frame)
