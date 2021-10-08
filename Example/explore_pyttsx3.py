@@ -8,7 +8,7 @@ def main():
     engine.setProperty(name='rate', value=170)
     # Set voice
     voices = engine.getProperty(name='voices')
-    engine.setProperty(name='voice', value=voices[0].id) # 1:KO-KR / 2:EN-US
+    engine.setProperty(name='voice', value=voices[0].id) # 0:KO-KR / 1:EN-US
 
     count: List[str] = ['하나', '둘', '셋', '넷', '다섯']
     for str_num in count:

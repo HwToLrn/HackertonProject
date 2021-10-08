@@ -7,6 +7,8 @@ import cv2
 import dataclasses
 import math
 from mediapipe.framework.formats import landmark_pb2
+import threading as trd
+import pyttsx3
 
 _PRESENCE_THRESHOLD = 0.5
 _VISIBILITY_THRESHOLD = 0.5
@@ -113,6 +115,22 @@ def calculate_angle(coor_fst: List[float], coor_scd: List[float], coor_trd: List
         angle = 360 - angle
     return angle
 
+def say_counter(counter: int):
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 200)
+
+    voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[0].id)
+
+    engine.say(f"{counter}")
+    engine.runAndWait()
+
+def create_thread(counter: int):
+    # 중복 생성에 유의할 것
+    thread = trd.Thread(target=say_counter, name='Counter', args=(counter,))
+    thread.daemon = True
+    if not thread.is_alive():
+        thread.start()
 
 def main():
     mp_drawing = mp.solutions.drawing_utils
@@ -221,6 +239,7 @@ def main():
 
                     if left_counter >= 1 and right_counter >= 1:
                         counter += 1
+                        create_thread(counter)
                         left_counter = 0
                         right_counter = 0
                         if counter == REPEATS:
