@@ -4,7 +4,7 @@ import cv2
 def main():
     capture = cv2.VideoCapture(0)
 
-    OUTPUT_FILENAME = '../SavedVideo/SavedVideo.mp4'
+    OUTPUT_FILENAME = '../SavedVideo/SavedVideo.avi'
     width = int(capture.get(3))
     height = int(capture.get(4))
 
