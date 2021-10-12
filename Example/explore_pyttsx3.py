@@ -1,8 +1,11 @@
 import pyttsx3
 from typing import List
 
+# Voice 추가하는 방법 Link
+# https://puneet166.medium.com/how-to-added-more-speakers-and-voices-in-pyttsx3-offline-text-to-speech-812c83d14c13
 def main():
-    engine = pyttsx3.init()
+    # OS platform마다 지원하는 driverName이 다르다. Window는 'sapi5'만 지원한다.
+    engine = pyttsx3.init(driverName='sapi5')
 
     # Set speed of voice
     engine.setProperty(name='rate', value=170)
