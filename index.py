@@ -117,12 +117,6 @@ def calculate_angle(coor_fst: List[float], coor_scd: List[float], coor_trd: List
 
 
 def say_counter(counter: int):
-    engine = pyttsx3.init()  ###
-    engine.setProperty('rate', 200)
-
-    voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[0].id)
-
     engine.say(f"{counter}")
     try:
         engine.runAndWait()
@@ -195,7 +189,7 @@ def is_visiblities(img, first: float, second: float, third: float) -> bool:
 
 
 def main():
-    global WIDTH, HEIGHT
+    global WIDTH, HEIGHT, engine
     mp_drawing = mp.solutions.drawing_utils
     mp_pose = mp.solutions.pose
 
@@ -214,6 +208,12 @@ def main():
 
     current_route: int = 0  # ROUTE[0] .. ROUTE[2] 순으로 사용
     current_set: int = 0
+
+    engine = pyttsx3.init()  ###
+    engine.setProperty('rate', 200)
+
+    voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[0].id)
 
     video = cv2.VideoCapture(0)
     WIDTH = video.get(cv2.CAP_PROP_FRAME_WIDTH)
