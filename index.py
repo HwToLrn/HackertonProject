@@ -1,3 +1,5 @@
+import datetime
+import time
 from typing import List, Tuple, Union, Optional, Mapping
 
 import numpy as np
@@ -28,6 +30,64 @@ CUSTOMIZED_POSE_CONNETIONS: List[Tuple[int, int]] = [
     (27, 29), (27, 31), (28, 30), (28, 32), (29, 31), (30, 32)
 ]
 
+class WebcamVideoStream:
+    def __init__(self, src=0):
+        self.stream = cv2.VideoCapture(src)
+        (self.grabbed, self.frame) = self.stream.read()
+        self.stopped = False
+        self.width = self.stream.get(cv2.CAP_PROP_FRAME_WIDTH)
+        self.height = self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.current_time = 0
+        self.prev_time = 0
+        self.FPS = 60
+
+    def start(self):
+        trd.Thread(target=self.update, args=()).start()
+        return self
+
+    def update(self):
+        while True:
+            if self.stopped:
+                return
+            (self.grabbed, self.frame) = self.stream.read()
+            self.current_time = time.time() - self.prev_time
+
+    def get_width(self):
+        return self.width
+
+    def get_height(self):
+        return self.height
+
+    def get_current_time(self):
+        return self.current_time
+
+    def read(self):
+        return self.grabbed, self.frame
+
+    def stop(self):
+        self.stopped = True
+
+class FPS:
+    def __init__(self):
+        self._start = None
+        self._end = None
+        self._numFrames = 0
+
+    def start(self):
+        self._start = datetime.datetime.now()
+        return self
+
+    def stop(self):
+        self._end = datetime.datetime.now()
+
+    def update(self):
+        self._numFrames += 1
+
+    def elapsed(self):
+        return (self._end - self._start).total_seconds()
+
+    def fps(self):
+        return self._numFrames / self.elapsed()
 
 @dataclasses.dataclass
 class DrawingSpec:
@@ -177,7 +237,7 @@ def is_visiblities(img, first: float, second: float, third: float) -> bool:
 
         text = 'Please adjust your web camera'
         cv2.putText(img=img, text=text, org=(100, int(HEIGHT/2)), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=2, color=WHITE_COLOR, thickness=2, lineType=cv2.LINE_AA)
+                    fontScale=1, color=WHITE_COLOR, thickness=1, lineType=cv2.LINE_AA)
         return True
     else:
         return False
@@ -202,7 +262,7 @@ def main():
     stages: List[str] = ['', ''] ###
 
     # 사용자가 미리 정해 놓은 루틴 / 한 운동의 반복횟수 / 한 운동의 세트횟수
-    ROUTE: List[str] = ['Push Up'] # 'Curl', 'Squat',
+    ROUTE: List[str] = ['Curl', 'Squat', 'Push Up']
     REPEATS: List[int] = [2]
     SET: int = 1
 
@@ -215,13 +275,15 @@ def main():
     voices = engine.getProperty('voices')
     engine.setProperty('voice', voices[0].id)
 
-    video = cv2.VideoCapture(0)
-    WIDTH = video.get(cv2.CAP_PROP_FRAME_WIDTH)
-    HEIGHT = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    videostream = WebcamVideoStream(src=0).start()
+    # video = cv2.VideoCapture(0)
+    WIDTH = videostream.get_width()
+    HEIGHT = videostream.get_height()
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        while video.isOpened():
-            checkframe, frame = video.read()
+        while True:
+            checkframe, frame = videostream.read()
+            current_time = videostream.get_current_time()
             # frame = cv2.flip(src=frame, flipCode=1) # 좌우(1) 또는 상하(0) 반전
 
             # Recolor 'frame' to RGB
@@ -287,7 +349,8 @@ def main():
                         draw_status(img=image, counter=counter, current_set=current_set, cur_fststage=stages[0], cur_scdstage=None,
                                     exer_type=ROUTE[current_route], _repeat=True, _stage=True, _set=True, _exercise=True, multi_stages=False)
                 elif ROUTE[current_route] == 'Curl':
-                    if is_visiblities(img=image, first=landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].visibility,
+
+                    if is_visiblities(img=image, first=landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].visibility, # 1 or 0
                                       second=landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].visibility,
                                       third=landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].visibility) or\
                         is_visiblities(img=image, first=landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].visibility,
@@ -403,7 +466,8 @@ def main():
                                       landmark_list=results.pose_landmarks,  # same type : landmarks[32]
                                       connections=CUSTOMIZED_POSE_CONNETIONS)  # mp_pose.POSE_CONNECTIONS
 
-            if checkframe:
+            if checkframe and (current_time > 1. / videostream.FPS):
+                videostream.prev_time = time.time()
                 cv2.imshow(winname='MyWindow', mat=image)
 
             key = cv2.waitKey(1)
@@ -414,8 +478,8 @@ def main():
                 # wait until any key is pressed
                 cv2.waitKey(-1)
 
-    video.release()
     cv2.destroyAllWindows()
+    videostream.stop()
 
 
 if __name__ == '__main__':
